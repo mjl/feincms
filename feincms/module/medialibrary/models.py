@@ -194,6 +194,17 @@ class MediaFileBase(models.Model, ExtensionsMixin, TranslatedObjectMixin):
         except Exception, e:
             logger.warn("Cannot delete media file %s: %s" % (name, e))
 
+    @classmethod
+    def init_with_data(cls, data):
+        """
+        Used for quickly uploading a file. Data is a file object as one
+        gets out of request.FILES['foo']
+        """
+        mf = cls()
+        mf.copyright = ''
+        mf.file.save(data.name, data, save=False)
+        return mf
+
 # ------------------------------------------------------------------------
 MediaFileBase.register_filetypes(
         # Should we be using imghdr.what instead of extension guessing?

@@ -24,7 +24,7 @@ from django.views.decorators.csrf import csrf_protect
 
 from ...translations import admin_translationinline, lookup_translations
 
-from .models import Category, MediaFileTranslation
+from .models import Category, MediaFile, MediaFileTranslation
 from .forms import MediaCategoryAdminForm, MediaFileAdminForm
 from .thumbnail import admin_thumbnail
 
@@ -106,11 +106,12 @@ class MediaFileAdmin(admin.ModelAdmin):
     actions           = [assign_category, save_as_zipfile]
 
     def get_urls(self):
-        from django.conf.urls import patterns, include, url
+        from django.conf.urls import patterns, url
 
         urls = super(MediaFileAdmin, self).get_urls()
         my_urls = patterns('',
-            url(r'^mediafile-bulk-upload/$', self.admin_site.admin_view(MediaFileAdmin.bulk_upload), {}, name='mediafile_bulk_upload')
+            url(r'^mediafile-bulk-upload/$', self.admin_site.admin_view(MediaFileAdmin.bulk_upload), {}, name='mediafile_bulk_upload'),
+            url(r'^mediafile-simple-upload/$', self.admin_site.admin_view(MediaFileAdmin.simple_upload), {}, name='mediafile_simple_upload'),
             )
 
         return my_urls + urls
@@ -199,6 +200,19 @@ class MediaFileAdmin(admin.ModelAdmin):
         else:
             messages.error(request, _("No input file given"))
 
+        return HttpResponseRedirect(reverse('admin:medialibrary_mediafile_changelist'))
+
+    @staticmethod
+    @csrf_protect
+    @permission_required('medialibrary.add_mediafile')
+    def simple_upload(request):
+        if request.method == 'POST' and 'data' in request.FILES:
+            try:
+                MediaFile.init_with_data(request.FILES['data']).save()
+            except Exception, e:
+                messages.error(request, _("Import failed: %s") % str(e))
+        else:
+            messages.error(request, _("No input file given"))
         return HttpResponseRedirect(reverse('admin:medialibrary_mediafile_changelist'))
 
     def queryset(self, request):
