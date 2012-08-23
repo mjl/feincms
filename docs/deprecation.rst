@@ -29,6 +29,10 @@ will be issued for at least two releases.
 * ``feincms.views.base`` has been moved to ``feincms.views.legacy``. Use
   ``feincms.views.cbv`` instead.
 * ``FEINCMS_FRONTEND_EDITING``'s default has been changed to ``False``.
+* The code in :mod:`feincms.module.page.models` has been split up. The admin
+  classes are in :mod:`feincms.module.page.modeladmin`, the forms in
+  :mod:`feincms.module.page.forms` now. Analogous changes have been made
+  to :mod:`feincms.module.medialibrary.models`.
 
 
 1.7
@@ -42,6 +46,8 @@ will be issued for at least two releases.
 * The module :mod:`feincms.content.medialibrary.models` will be replaced by
   the contents of :mod:`feincms.content.medialibrary.v2`. The latter uses
   Django's ``raw_id_fields`` support instead of reimplementing it badly.
+
+* The legacy views inside :mod:`feincms.views.legacy` will be removed.
 
 
 1.8
@@ -73,3 +79,9 @@ will be issued for at least two releases.
   anymore. :mod:`feincms.views.generic` and
   :func:`feincms.views.decorators.add_page_to_extra_context` will be removed
   as well.
+
+* The module :mod:`feincms.content.medialibrary.v2`, which is only an alias for
+  :mod:`feincms.content.medialibrary.models` starting with FeinCMS v1.7 will be
+  removed.
+
+* ``Page.setup_request()`` does not do anything anymore and will be removed.

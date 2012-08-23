@@ -27,17 +27,24 @@ def feincms_nav(context, feincms_page, level=1, depth=1):
     """
 
     if isinstance(feincms_page, HttpRequest):
-        feincms_page = Page.objects.for_request(feincms_page, best_match=True)
+        try:
+            # warning: explicit Page reference here
+            feincms_page = Page.objects.for_request(
+                feincms_page, best_match=True)
+        except Page.DoesNotExist:
+            return []
 
     mptt_opts = feincms_page._mptt_meta
 
     # mptt starts counting at zero
     mptt_level_range = [level - 1, level + depth - 1]
 
-    queryset = Page.objects.in_navigation().filter(**{
-        '%s__gte' % mptt_opts.level_attr: mptt_level_range[0],
-        '%s__lt' % mptt_opts.level_attr: mptt_level_range[1],
-        })
+    queryset = feincms_page.__class__._default_manager.in_navigation().filter(
+        **{
+            '%s__gte' % mptt_opts.level_attr: mptt_level_range[0],
+            '%s__lt' % mptt_opts.level_attr: mptt_level_range[1],
+        }
+    )
 
     page_level = getattr(feincms_page, mptt_opts.level_attr)
 
@@ -56,11 +63,20 @@ def feincms_nav(context, feincms_page, level=1, depth=1):
             # The requested pages start somewhere higher up in the tree
             parent = feincms_page.get_ancestors()[level - 2]
 
+        elif level - 1 > page_level:
+            # The requested pages are grandchildren of the current page
+            # (or even deeper in the tree). If we would continue processing,
+            # this would result in pages from different subtrees being
+            # returned directly adjacent to each other.
+            queryset = Page.objects.none()
+
         if parent:
-            # Special case for navigation extensions
             if getattr(parent, 'navigation_extension', None):
-                return parent.extended_navigation(depth=depth,
-                    request=context.get('request'))
+                # Special case for navigation extensions
+                return list(parent.extended_navigation(depth=depth,
+                    request=context.get('request')))
+
+            # Apply descendant filter
             queryset &= parent.get_descendants()
 
     if depth > 1:
@@ -79,14 +95,16 @@ def feincms_nav(context, feincms_page, level=1, depth=1):
 
         queryset = _filter(queryset)
 
-    if 'navigation' in feincms_page._feincms_extensions:
+    if hasattr(feincms_page, 'navigation_extension'):
         # Filter out children of nodes which have a navigation extension
         extended_node_rght = [] # mptt node right value
 
         def _filter(iterable):
             for elem in iterable:
+                elem_right = getattr(elem, mptt_opts.right_attr)
+
                 if extended_node_rght:
-                    if getattr(elem, mptt_opts.right_attr) < extended_node_rght[-1]:
+                    if elem_right < extended_node_rght[-1]:
                         # Still inside some navigation extension
                         continue
                     else:
@@ -94,11 +112,17 @@ def feincms_nav(context, feincms_page, level=1, depth=1):
 
                 if getattr(elem, 'navigation_extension', None):
                     yield elem
-                    extended_node_rght.append(getattr(elem, mptt_opts.right_attr))
+                    extended_node_rght.append(elem_right)
 
                     for extended in elem.extended_navigation(depth=depth,
                             request=context.get('request')):
-                        if getattr(extended, mptt_opts.level_attr, 0) < level + depth - 1:
+
+                        # Only return items from the extended navigation which
+                        # are inside the requested level+depth values. The
+                        # "-1" accounts for the differences in MPTT and
+                        # navigation level counting
+                        this_level = getattr(extended, mptt_opts.level_attr, 0)
+                        if this_level < level + depth - 1:
                             yield extended
 
                 else:
@@ -203,7 +227,7 @@ class LanguageLinksNode(SimpleAssignmentNodeWithVarAndArgs):
 
     Example::
 
-        {% feincms_languagelinks for entry as links all,excludecurrent %}
+        {% feincms_languagelinks for feincms_page as links all,excludecurrent %}
         {% for key, name, link in links %}
             <a href="{% if link %}{{ link }}{% else %}/{{ key }}/{% endif %}">{% trans name %}</a>
         {% endfor %}
@@ -220,7 +244,7 @@ class LanguageLinksNode(SimpleAssignmentNodeWithVarAndArgs):
         request = args.get('request', None)
         if request:
             # Trailing path without first slash
-            trailing_path = request._feincms_extra_context.get('extra_path', '')[1:]
+            trailing_path = request._feincms_extra_context.get('extra_path', ['/'])[0][1:]
 
         translations = dict((t.language, t) for t in page.available_translations())
         translations[page.language] = page
@@ -437,7 +461,7 @@ def siblings_along_path_to(page_list, page2):
                                    a_page.level == top_level or
                                    any((_is_sibling_of(a_page, a) for a in ancestors))]
             return siblings
-        except AttributeError:
+        except (AttributeError, ValueError):
             pass
 
     return ()

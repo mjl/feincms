@@ -17,7 +17,6 @@ from feincms.admin import item_editor, tree_editor
 
 # ------------------------------------------------------------------------
 from .forms import PageAdminForm
-from .models import Page
 
 # ------------------------------------------------------------------------
 class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
@@ -68,13 +67,14 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
         else:
             cls.fieldsets.insert(cls.fieldset_insertion_index, fieldset)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model, admin_site):
         ensure_completely_loaded()
 
-        if len(Page._feincms_templates) > 4 and 'template_key' in self.radio_fields:
+        if len(model._feincms_templates) > 4 and \
+                'template_key' in self.radio_fields:
             del(self.radio_fields['template_key'])
 
-        super(PageAdmin, self).__init__(*args, **kwargs)
+        super(PageAdmin, self).__init__(model, admin_site)
 
         # The use of fieldsets makes only fields explicitly listed in there
         # actually appear in the admin form. However, extensions should not be
