@@ -10,6 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib import admin
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
+from django.utils.functional import curry
 from django.utils.translation import ugettext_lazy as _
 
 from feincms import ensure_completely_loaded
@@ -88,10 +89,14 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
             if not f.name.startswith('_') and not f.name in ('id', 'lft', 'rght', 'tree_id', 'level') and \
                     not f.auto_created and not f.name in present_fields and f.editable:
                 self.unknown_fields.append(f.name)
-                if not f.editable:
-                    self.readonly_fields.append(f.name)
+            if not f.editable:
+                self.readonly_fields.append(f.name)
 
     in_navigation_toggle = tree_editor.ajax_editable_boolean('in_navigation', _('in navigation'))
+
+    def get_form(self, *args, **kwargs):
+        form = super(PageAdmin, self).get_form(*args, **kwargs)
+        return curry(form, modeladmin=self)
 
     def _actions_column(self, page):
         editable = getattr(page, 'feincms_editable', True)

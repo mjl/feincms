@@ -8,6 +8,7 @@ from django.core.cache import cache as django_cache
 from django.conf import settings as django_settings
 from django.db import models
 from django.db.models import Q, signals
+from django.db.models.loading import get_model
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
 from django.db.transaction import commit_on_success
@@ -166,7 +167,8 @@ class Page(create_base_model(MPTTModel), ContentModelMixin):
     override_url = models.CharField(_('override URL'), max_length=255, blank=True,
         help_text=_('Override the target URL. Be sure to include slashes at the beginning and at the end if it is a local URL. This affects both the navigation and subpages\' URLs.'))
     redirect_to = models.CharField(_('redirect to'), max_length=255, blank=True,
-        help_text=_('Target URL for automatic redirects.'))
+        help_text=_('Target URL for automatic redirects'
+            ' or the primary key of a page.'))
     _cached_url = models.CharField(_('Cached URL'), max_length=255, blank=True,
         editable=False, default='', db_index=True)
 
@@ -254,8 +256,6 @@ class Page(create_base_model(MPTTModel), ContentModelMixin):
         if self._cached_url == self._original_cached_url:
             return
 
-        # TODO: Does not find everything it should when ContentProxy content
-        # inheritance has been customized.
         pages = self.get_descendants().order_by('lft')
 
         for page in pages:
@@ -319,6 +319,31 @@ class Page(create_base_model(MPTTModel), ContentModelMixin):
         """
         This might be overriden/extended by extension modules.
         """
+
+        if not self.redirect_to:
+            return u''
+
+        # It might be an identifier for a different object
+        match = re.match(
+            r'^(?P<app_label>\w+).(?P<module_name>\w+):(?P<pk>\d+)$',
+            self.redirect_to)
+
+        # It's not, oh well.
+        if not match:
+            return self.redirect_to
+
+        matches = match.groupdict()
+        model = get_model(matches['app_label'], matches['module_name'])
+
+        if not model:
+            return self.redirect_to
+
+        try:
+            instance = model._default_manager.get(pk=int(matches['pk']))
+            return instance.get_absolute_url()
+        except models.ObjectDoesNotExist:
+            pass
+
         return self.redirect_to
 
     @staticmethod
