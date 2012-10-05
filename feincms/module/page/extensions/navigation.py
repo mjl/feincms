@@ -14,6 +14,7 @@ from feincms import extensions
 from feincms.utils import get_object
 from feincms._internal import monkeypatch_method
 
+from feincms.admin import add_extension_options
 
 class TypeRegistryMetaClass(type):
     """
@@ -119,9 +120,5 @@ class Extension(extensions.Extension):
 
             return cls().children(self, **kwargs)
 
-
     def handle_modeladmin(self, modeladmin):
-        modeladmin.add_extension_options(_('Navigation extension'), {
-            'fields': ('navigation_extension',),
-            'classes': ('collapse',),
-            })
+        add_extension_options(modeladmin, _('Navigation extension'), {'fields': ('navigation_extension',)})
