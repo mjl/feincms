@@ -99,23 +99,13 @@ def feincms_nav(context, feincms_page, level=1, depth=1):
 
     if hasattr(feincms_page, 'navigation_extension'):
         # Filter out children of nodes which have a navigation extension
-        extended_node_rght = [] # mptt node right value
 
         def _filter(iterable):
             for elem in iterable:
                 elem_right = getattr(elem, mptt_opts.right_attr)
 
-                if extended_node_rght:
-                    if elem_right < extended_node_rght[-1]:
-                        # Still inside some navigation extension
-                        continue
-                    else:
-                        extended_node_rght.pop()
-
+                yield elem
                 if getattr(elem, 'navigation_extension', None):
-                    yield elem
-                    extended_node_rght.append(elem_right)
-
                     for extended in elem.extended_navigation(depth=depth,
                             request=context.get('request')):
 
@@ -126,9 +116,6 @@ def feincms_nav(context, feincms_page, level=1, depth=1):
                         this_level = getattr(extended, mptt_opts.level_attr, 0)
                         if this_level < level + depth - 1:
                             yield extended
-
-                else:
-                    yield elem
 
         queryset = _filter(queryset)
 
