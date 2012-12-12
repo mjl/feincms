@@ -501,6 +501,9 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
                     input_element.checked = true;
 
                     $('#page_form').append('<input type="hidden" name="_continue" value="1" />');
+                    /* Simulate a click on the save button instead of form.submit(), so
+                       that the submit handlers from FilteredSelectMultiple get
+                       invoked. See Issue #372 */
                     $('#page_form input[type=submit][name=_save]').click();
 
                 } else {
