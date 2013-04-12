@@ -68,10 +68,15 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
     }
 
     function create_new_item_from_form(form, modname, modvar){
+
         var fieldset = $("<fieldset>").addClass("module aligned order-item item-wrapper-" + modvar);
 
-        var wrp = [];
-        wrp.push('<h2><img class="item-delete" src="'+IMG_DELETELINK_PATH+'" /><span class="handle"></span> <span class="modname">'+modname+'</span> &nbsp;(<span class="collapse">'+feincms_gettext('Hide')+'</span>)</h2>');
+        var wrp = ['<h2>'];
+        // original has delete checkbox?
+        if($('.delete', form).length) {
+            wrp.push('<img class="item-delete" src="'+IMG_DELETELINK_PATH+'" />');
+        }
+        wrp.push('<span class="handle"></span> <span class="modname">'+modname+'</span> &nbsp;(<span class="collapse">'+feincms_gettext('Hide')+'</span>)</h2>');
         wrp.push('<div class="item-content"></div>');
         fieldset.append(wrp.join(""));
 
