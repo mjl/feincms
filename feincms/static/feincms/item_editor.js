@@ -70,10 +70,11 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
     function create_new_item_from_form(form, modname, modvar){
 
         var fieldset = $("<fieldset>").addClass("module aligned order-item item-wrapper-" + modvar);
+        var original_id_id = '#id_' + form.attr('id') + '-id';
 
         var wrp = ['<h2>'];
-        // original has delete checkbox?
-        if($('.delete', form).length) {
+        // If original has delete checkbox or this is a freshly added CT? Add delete link!
+        if($('.delete', form).length || !$(original_id_id, form).val()) {
             wrp.push('<img class="item-delete" src="'+IMG_DELETELINK_PATH+'" />');
         }
         wrp.push('<span class="handle"></span> <span class="modname">'+modname+'</span> &nbsp;(<span class="collapse">'+feincms_gettext('Hide')+'</span>)</h2>');
