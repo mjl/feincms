@@ -572,7 +572,7 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
         $(".order-machine").sortable({
             handle: '.handle',
             helper: function(event, ui){
-                var h2 = $("<h2>").html($(ui.item).find('span.modname').html());
+                var h2 = $("<h2>").html($(ui).find('span.modname').html());
                 return $("<fieldset>").addClass("helper module").append(h2);
             },
             placeholder: 'highlight',
