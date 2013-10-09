@@ -159,7 +159,8 @@ class Extension(extensions.Extension):
 
         @monkeypatch_method(cls)
         def available_translations(self, use_cache=True):
-            ck = "FEINCMS:available_translations:%s.%s.%s" % (self.app_label, self.module_name, self.pk)
+            ck = "FEINCMS:available_translations:%s.%s.%s" % \
+                (self._meta.app_label, self._meta.module_name, self.pk)
             if use_cache:
                 translation_list = cache.get(ck)
             else:
