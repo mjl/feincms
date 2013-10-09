@@ -18,6 +18,7 @@ non-FeinCMS managed views such as Django's administration tool.
 import logging
 
 from django.conf import settings as django_settings
+from django.core.cache import cache
 from django.db import models
 from django.http import HttpResponseRedirect
 from django.utils import translation
@@ -158,16 +159,29 @@ class Extension(extensions.Extension):
                 return target
 
         @monkeypatch_method(cls)
-        def available_translations(self):
-            if not self.id: # New, unsaved pages have no translations
-                return []
-            if is_primary_language(self.language):
-                return self.translations.all()
-            elif self.translation_of:
-                return [self.translation_of] + list(self.translation_of.translations.exclude(
-                    language=self.language))
+        def available_translations(self, use_cache=True):
+            ck = "FEINCMS:available_translations:%s.%s.%s" % (self.app_label, self.module_name, self.pk)
+            if use_cache:
+                translation_list = cache.get(ck)
             else:
-                return []
+                # No caching, also clean out cache since that means someone is
+                # working in the admin backend
+                translation_list = None
+                cache.delete(ck)
+
+            if translation_list is None:
+                translation_list = ()
+                if self.id:  # New, unsaved pages have no translations
+                    if is_primary_language(self.language):
+                        translation_list = list(self.translations.all())
+                    elif self.translation_of:
+                        translation_list = [self.translation_of] + \
+                            list(self.translation_of.translations.exclude(language=self.language))
+
+                if use_cache:
+                    cache.set(ck, translation_list)
+
+            return translation_list
 
         @monkeypatch_method(cls)
         def get_original_translation(self, *args, **kwargs):
@@ -188,7 +202,7 @@ class Extension(extensions.Extension):
     def handle_modeladmin(self, modeladmin):
 
         def available_translations_admin(self, page):
-            translations = dict((p.language, p.id) for p in page.available_translations())
+            translations = dict((p.language, p.id) for p in page.available_translations(use_cache=False))
 
             links = []
 
