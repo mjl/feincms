@@ -32,8 +32,10 @@ def format_date(d, if_none=''):
     fmt = (d.year == now.year) and '%d.%m' or '%d.%m.%Y'
     return d.strftime(fmt)
 
+
 def latest_children(self):
     return self.get_children().order_by('-publication_date')
+
 
 # ------------------------------------------------------------------------
 def granular_now(n=None):
@@ -49,6 +51,7 @@ def granular_now(n=None):
     return timezone.make_aware(datetime(n.year, n.month, n.day, n.hour,
                                         (n.minute // 5) * 5), n.tzinfo)
 
+
 # ------------------------------------------------------------------------
 def datepublisher_response_processor(page, request, response):
     """
@@ -61,18 +64,24 @@ def datepublisher_response_processor(page, request, response):
     if expires is not None:
         now = datetime.now()
         delta = expires - now
-        delta = int(delta.days * 86400 + delta.seconds)
+
+        try:
+            delta = int(delta.days * 86400 + delta.seconds)
+        except Exception:
+            # This happens once every four years (or so)
+            delta = int(delta.days * 86400 + delta.seconds - 7200)
+
         patch_response_headers(response, delta)
+
 
 # ------------------------------------------------------------------------
 def register(cls, admin_cls):
     cls.add_to_class('publication_date',
-                                models.DateTimeField(_('publication date'),
-        default=granular_now))
+        models.DateTimeField(_('publication date'), default=granular_now))
     cls.add_to_class('publication_end_date',
-                                models.DateTimeField(_('publication end date'),
-        blank=True, null=True,
-        help_text=_('Leave empty if the entry should stay active forever.')))
+        models.DateTimeField(_('publication end date'),
+            blank=True, null=True,
+            help_text=_('Leave empty if the entry should stay active forever.')))
     cls.add_to_class('latest_children', latest_children)
 
     # Patch in rounding the pub and pub_end dates on save

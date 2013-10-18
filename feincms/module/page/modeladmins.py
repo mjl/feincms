@@ -21,6 +21,7 @@ from feincms.admin import item_editor, tree_editor
 # ------------------------------------------------------------------------
 from .forms import PageAdminForm
 
+
 # ------------------------------------------------------------------------
 class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
     class Media:
@@ -41,7 +42,7 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
                 ],
         }),
         (_('Other options'), {
-            'classes': ['feincms-collapse'],
+            'classes': ['collapse'],
             'fields': unknown_fields,
         }),
         # <-- insertion point, extensions should appear here,
@@ -53,7 +54,7 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
     list_display = ['short_title', 'is_visible_admin', 'in_navigation_toggle', 'template']
     list_filter = ['active', 'in_navigation', 'template_key', 'parent']
     search_fields = ['title', 'slug']
-    prepopulated_fields = { 'slug': ('title',), }
+    prepopulated_fields = {'slug': ('title',)}
 
     raw_id_fields = ['parent']
     radio_fields = {'template_key': admin.HORIZONTAL}
@@ -108,7 +109,7 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
         return curry(form, modeladmin=self)
 
     def _actions_column(self, page):
-        addable  = getattr(page, 'feincms_addable', True)
+        addable = getattr(page, 'feincms_addable', True)
 
         preview_url = "../../r/%s/%s/" % (
                 ContentType.objects.get_for_model(self.model).id,
@@ -142,7 +143,7 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
         return actions
 
     def add_view(self, request, **kwargs):
-        kwargs['form_url'] = request.get_full_path() # Preserve GET parameters
+        kwargs['form_url'] = request.get_full_path()  # Preserve GET parameters
         if 'translation_of' in request.GET and 'language' in request.GET:
             try:
                 original = self.model._tree_manager.get(
@@ -215,7 +216,8 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
         page is not visible because of publishing dates or inherited status.
         """
         if not hasattr(self, "_visible_pages"):
-            self._visible_pages = list() # Sanity check in case this is not already defined
+            # Sanity check in case this is not already defined
+            self._visible_pages = list()
 
         if page.parent_id and not page.parent_id in self._visible_pages:
             # parent page's invisibility is inherited

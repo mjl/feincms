@@ -149,6 +149,25 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
                 clearTimeout(this.mouseleave_timeout);
                 this.mouseleave_timeout = null;
                 ev.stopPropagation();
+            });
+
+        // Controls animations
+        item_controls.find("*").hide();
+        var is_hidden = true;
+        var mouseenter_timeout;
+        var mouseleave_timeout;
+        function hide_controls() {
+            item_controls.find("*").fadeOut(400);
+            is_hidden = true;
+        }
+        function show_controls() {
+            item_controls.find("*").fadeIn(200);
+            is_hidden = false;
+        }
+        item_controls.unbind('mouseleave'); // Unbind in case it's already been bound.
+        item_controls.mouseleave(function() {
+            clearTimeout(mouseenter_timeout);
+            mouseleave_timeout = setTimeout(hide_controls, 200);
         });
         item_controls.unbind('toggle').toggle(
             function() { $(this).find("*").show(); },
