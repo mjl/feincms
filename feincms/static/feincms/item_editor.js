@@ -29,6 +29,7 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
     tab_fields.each(function(i, c) {
         var tab_id = c.id = id_prefix + '-' + i;
         var h2 = $('h2', c).remove().text();
+        $(c).removeClass('collapsed collapse');
         ul.append('<li><a href="#' + tab_id + '">' + h2 + '</a></li>');
     });
 
@@ -169,15 +170,16 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
             clearTimeout(mouseenter_timeout);
             mouseleave_timeout = setTimeout(hide_controls, 200);
         });
+        item_controls.unbind('mouseenter'); // Unbind in case it's already been bound.
+        item_controls.mouseenter(function() {
+            clearTimeout(mouseleave_timeout);
+            if (is_hidden) mouseenter_timeout = setTimeout(show_controls, 200); // To prevent the control bar to appear when mouse accidentally enters the zone.
+        });
+/*
         item_controls.unbind('toggle').toggle(
             function() { $(this).find("*").show(); },
             function() { $(this).find("*").fadeOut(); }
         );
-        item_controls.unbind('mouseenter').mouseenter(
-            function() {
-                clearTimeout(this.mouseleave_timeout);
-                this.mouseleave_timeout = null;
-        });
         item_controls.unbind('mouseleave').mouseleave(
             function() {
                 var target = this;
@@ -186,6 +188,7 @@ function convert_fieldsets_to_tabs(selector, insert_before, id_prefix)
                     target.mouseleave_timeout = setTimeout(function() { $(target).click(); }, 1200);
                 }
         });
+*/
     }
 
 

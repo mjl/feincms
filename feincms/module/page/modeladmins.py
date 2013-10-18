@@ -42,7 +42,7 @@ class PageAdmin(item_editor.ItemEditor, tree_editor.TreeEditor):
                 ],
         }),
         (_('Other options'), {
-            'classes': ['collapse'],
+            'classes': ['feincms-collapse'],
             'fields': unknown_fields,
         }),
         # <-- insertion point, extensions should appear here,
